@@ -8,6 +8,9 @@ import InputVariables from "./components/InputVariables"
 import FinalResponse from "./components/FinalResponse"
 import { ThemeToggle } from "./components/ThemeToggle"
 
+const URL = process.env.NEXT_PUBLIC_BACKEND_URL
+console.log(URL)
+
 export default function Home() {
   const [step, setStep] = useState(1)
   const [objective, setObjective] = useState("")
@@ -17,27 +20,31 @@ export default function Home() {
 
   const handleObjectiveSubmit = async (objective: string) => {
     setObjective(objective)
-    // Call API to generate prompt template
-    const response = await fetch("/api/generate-prompt", {
+    const response = await fetch(URL + "/prompt-creator/invoke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ objective }),
+      body: JSON.stringify({
+        "input": {
+          "objective": objective
+        }
+      }),
     })
     const data = await response.json()
+    console.log(data)
     setPromptTemplate(data.promptTemplate)
     setInputVariables(data.inputVariables)
     setStep(2)
   }
 
   const handleInputVariablesSubmit = async (variables: Record<string, string>) => {
-    // Call API to generate final response
-    const response = await fetch("/api/generate-response", {
+    const response = await fetch(URL + "/generate-response/invoke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ promptTemplate, variables }),
+      body: JSON.stringify({ "input": { "promptTemplate": promptTemplate, "variables": variables } }),
     })
     const data = await response.json()
-    setFinalResponse(data.response)
+    console.log(data.llm_response)
+    setFinalResponse(data.llm_response)
     setStep(3)
   }
 
@@ -57,7 +64,7 @@ export default function Home() {
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Objective</CardTitle>
-          <CardDescription>Provide the objective you want to generate a response for</CardDescription>
+          <CardDescription>{objective}</CardDescription>
         </CardHeader>
         <CardContent>
           {step === 1 && <ObjectiveForm onSubmit={handleObjectiveSubmit} />}
@@ -73,4 +80,3 @@ export default function Home() {
     </div>
   )
 }
-
